@@ -11,11 +11,17 @@ Help people track recurring habits with either manual entries or automatic progr
 - Manual habit creation and progress entry.
 - Automatic walking progress using Android's step counter sensor.
 - Completion notification when a tracked habit reaches its target.
-- Home-screen widget with selectable habit and quick manual increment.
+- Home-screen widgets with selectable habit, quick manual increment, and multiple display options.
 - Local-first storage with no account required.
-- Black and white visual design inspired by Meta Threads.
+- Samsung Health-inspired interface with Poppins typography, soft cards, and clear action labels.
 - Integration screen prepared for Google Health Connect and Strava setup.
 - Google Play readiness checklist included.
+
+## Design Preview
+
+Open [design-preview.html](design-preview.html) in Cursor or a browser to review the app direction before generating APK files.
+
+The preview mirrors the Android direction: Samsung One UI-style spacing, rounded health cards, Poppins text, named buttons, progress metrics, and 2x1, 2x2, and 4x1 widget concepts.
 
 ## v0.1.0 Scope
 

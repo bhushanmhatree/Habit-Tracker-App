@@ -14,6 +14,7 @@ final class HabitStore {
     private static final String PREFS = "habit_store";
     private static final String HABITS = "habits";
     private static final String WIDGET_PREFIX = "widget_";
+    private static final String WIDGET_MODE_PREFIX = "widget_mode_";
 
     private final SharedPreferences preferences;
 
@@ -76,12 +77,23 @@ final class HabitStore {
         preferences.edit().putString(WIDGET_PREFIX + widgetId, habitId).apply();
     }
 
+    void saveWidgetMode(int widgetId, String mode) {
+        preferences.edit().putString(WIDGET_MODE_PREFIX + widgetId, mode).apply();
+    }
+
     String getWidgetHabit(int widgetId) {
         return preferences.getString(WIDGET_PREFIX + widgetId, null);
     }
 
+    String getWidgetMode(int widgetId) {
+        return preferences.getString(WIDGET_MODE_PREFIX + widgetId, "target");
+    }
+
     void removeWidgetHabit(int widgetId) {
-        preferences.edit().remove(WIDGET_PREFIX + widgetId).apply();
+        preferences.edit()
+                .remove(WIDGET_PREFIX + widgetId)
+                .remove(WIDGET_MODE_PREFIX + widgetId)
+                .apply();
     }
 
     private void saveHabits(List<Habit> habits) {

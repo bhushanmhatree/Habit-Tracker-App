@@ -41,9 +41,14 @@ public class HabitWidgetProvider extends AppWidgetProvider {
 
     static void updateAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        ComponentName component = new ComponentName(context, HabitWidgetProvider.class);
-        int[] ids = manager.getAppWidgetIds(component);
-        for (int id : ids) {
+        updateComponent(context, manager, HabitWidgetProvider.class);
+        updateComponent(context, manager, HabitCompactWidgetProvider.class);
+        updateComponent(context, manager, HabitWideWidgetProvider.class);
+    }
+
+    private static void updateComponent(Context context, AppWidgetManager manager, Class<?> provider) {
+        ComponentName component = new ComponentName(context, provider);
+        for (int id : manager.getAppWidgetIds(component)) {
             updateWidget(context, manager, id);
         }
     }
@@ -51,16 +56,19 @@ public class HabitWidgetProvider extends AppWidgetProvider {
     static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
         HabitStore store = new HabitStore(context);
         String habitId = store.getWidgetHabit(widgetId);
+        String mode = store.getWidgetMode(widgetId);
         Habit habit = habitId == null ? null : store.getHabit(habitId);
 
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.habit_widget);
         if (habit == null) {
             views.setTextViewText(R.id.widget_title, "Choose habit");
+            views.setTextViewText(R.id.widget_metric, "Widget setup");
             views.setTextViewText(R.id.widget_progress, "Tap to open");
             views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context));
         } else {
             views.setTextViewText(R.id.widget_title, habit.title);
-            views.setTextViewText(R.id.widget_progress, habit.progress + " / " + habit.target + " " + habit.unit);
+            views.setTextViewText(R.id.widget_metric, widgetMetric(habit, mode));
+            views.setTextViewText(R.id.widget_progress, widgetProgress(habit, mode));
             views.setOnClickPendingIntent(R.id.widget_root, openAppIntent(context));
             Intent addIntent = new Intent(context, HabitWidgetProvider.class);
             addIntent.setAction(ACTION_ADD_PROGRESS);
@@ -84,5 +92,38 @@ public class HabitWidgetProvider extends AppWidgetProvider {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+    }
+
+    private static String widgetMetric(Habit habit, String mode) {
+        if ("checklist".equals(mode)) {
+            return habit.completed ? "Checklist done" : "Checklist item";
+        }
+        if ("streak".equals(mode)) {
+            return "Streak";
+        }
+        if ("score".equals(mode)) {
+            return "Score";
+        }
+        if ("frequency".equals(mode)) {
+            return "Frequency";
+        }
+        return "Target";
+    }
+
+    private static String widgetProgress(Habit habit, String mode) {
+        int percent = Math.min(100, Math.round((habit.progress * 100f) / Math.max(1, habit.target)));
+        if ("checklist".equals(mode)) {
+            return habit.completed ? "Completed" : "Open";
+        }
+        if ("streak".equals(mode)) {
+            return habit.completed ? "1 day" : "0 days";
+        }
+        if ("score".equals(mode)) {
+            return percent + " pts";
+        }
+        if ("frequency".equals(mode)) {
+            return "Every " + habit.intervalHours + "h";
+        }
+        return habit.progress + " / " + habit.target + " " + habit.unit;
     }
 }

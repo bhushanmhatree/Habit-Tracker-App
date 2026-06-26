@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habit Tracker Design Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #e8ebf1;
+      color: #17191f;
+      font-family: Poppins, system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+    }
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      min-height: 780px;
+      background: #f6f7fa;
+      border-radius: 34px;
+      box-shadow: 0 24px 80px rgba(32, 38, 52, .20);
+      padding: 30px 20px 22px;
+      overflow: hidden;
+    }
+    .top, .row, .actions, .widgets { display: flex; align-items: center; }
+    .top { gap: 16px; margin-bottom: 16px; }
+    .title { flex: 1; }
+    .eyebrow, .muted { color: #6a717d; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 30px; line-height: 1.15; }
+    h2 { font-size: 20px; }
+    .button {
+      border: 0;
+      border-radius: 22px;
+      padding: 13px 18px;
+      font: 600 14px Poppins, sans-serif;
+      background: #e8f4ff;
+      color: #168dff;
+    }
+    .button.primary { width: 100%; background: #168dff; color: white; margin: 16px 0 4px; }
+    .card {
+      background: white;
+      border-radius: 26px;
+      padding: 18px;
+      margin-top: 14px;
+      box-shadow: 0 10px 30px rgba(55, 65, 86, .06);
+    }
+    .score { font-size: 42px; font-weight: 700; line-height: 1.1; }
+    .row { justify-content: space-between; gap: 12px; }
+    .pill {
+      border-radius: 20px;
+      background: #e8f4ff;
+      color: #168dff;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill.done { background: #e2f9ef; color: #0db174; }
+    .progress {
+      height: 10px;
+      background: #edf0f5;
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 8px 0 14px;
+    }
+    .bar { height: 100%; background: #168dff; border-radius: inherit; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .metric span { display: block; color: #6a717d; font-size: 12px; }
+    .metric strong { font-size: 14px; }
+    .actions { gap: 10px; }
+    .actions .button { flex: 1; padding-inline: 8px; }
+    .widgets { gap: 10px; align-items: stretch; margin-top: 14px; }
+    .widget {
+      background: white;
+      border: 1px solid #e7eaf0;
+      border-radius: 26px;
+      padding: 14px;
+      min-height: 84px;
+      flex: 1;
+    }
+    .widget.wide { flex: 2; }
+    .widget b { display: block; font-size: 14px; }
+    .widget small { color: #6a717d; }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="top">
+      <div class="title">
+        <p class="eyebrow">Today</p>
+        <h1>Habit Tracker</h1>
+      </div>
+      <button class="button">Sync</button>
+    </section>
+
+    <section class="card">
+      <p class="muted">Daily score</p>
+      <p class="score">74</p>
+      <p class="muted">2 completed - 4 active habits</p>
+    </section>
+
+    <button class="button primary">Create habit</button>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <h2>Walk outside</h2>
+          <p class="muted">Auto step tracking - every 2 hours</p>
+        </div>
+        <span class="pill">Open</span>
+      </div>
+      <p class="score" style="font-size:28px;margin-top:14px;">680 / 1000 steps</p>
+      <div class="progress"><div class="bar" style="width:68%"></div></div>
+      <div class="metrics">
+        <p class="metric"><span>Target</span><strong>1000 steps</strong></p>
+        <p class="metric"><span>Streak</span><strong>0 days</strong></p>
+        <p class="metric"><span>Score</span><strong>68 pts</strong></p>
+      </div>
+      <div class="actions">
+        <button class="button">Log progress</button>
+        <button class="button">Reset</button>
+        <button class="button primary" style="margin:0;">Start steps</button>
+      </div>
+    </section>
+
+    <section class="widgets">
+      <div class="widget">
+        <b>2x1</b>
+        <small>Checklist</small>
+        <p>Open</p>
+      </div>
+      <div class="widget">
+        <b>2x2</b>
+        <small>Target</small>
+        <p>680 / 1000</p>
+      </div>
+    </section>
+    <section class="widgets">
+      <div class="widget wide">
+        <b>4x1</b>
+        <small>Frequency</small>
+        <p>Every 2h</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

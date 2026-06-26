@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -23,6 +24,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +35,14 @@ public class MainActivity extends Activity implements SensorEventListener {
     private static final int REQUEST_ACTIVITY = 10;
     private static final int REQUEST_NOTIFICATIONS = 11;
     private static final String CHANNEL_ID = "habit_completion";
+    private static final int BG = Color.rgb(246, 247, 250);
+    private static final int CARD = Color.WHITE;
+    private static final int TEXT = Color.rgb(23, 25, 31);
+    private static final int MUTED = Color.rgb(106, 113, 125);
+    private static final int BLUE = Color.rgb(22, 141, 255);
+    private static final int GREEN = Color.rgb(13, 177, 116);
+    private static final int SOFT_BLUE = Color.rgb(232, 244, 255);
+    private static final int SOFT_GREEN = Color.rgb(226, 249, 239);
 
     private HabitStore store;
     private LinearLayout list;
@@ -71,42 +81,61 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void render() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.WHITE);
-        root.setPadding(28, 44, 28, 24);
+        root.setBackgroundColor(BG);
+        root.setPadding(dp(20), dp(34), dp(20), dp(18));
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setOrientation(LinearLayout.HORIZONTAL);
 
-        TextView title = text("Habit Tracker", 30, true);
-        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        header.addView(title, titleParams);
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        titleBlock.addView(text("Today", 14, false, MUTED));
+        titleBlock.addView(text("Habit Tracker", 30, true, TEXT));
+        header.addView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
-        Button sync = pill("Sync", false);
+        Button sync = actionButton("Sync", false);
         sync.setOnClickListener(v -> startActivity(new Intent(this, SyncSettingsActivity.class)));
         header.addView(sync);
         root.addView(header);
 
-        TextView subtitle = text("Manual habits, step goals, and quiet completion nudges.", 15, false);
-        subtitle.setPadding(0, 0, 0, 20);
-        root.addView(subtitle);
+        root.addView(summaryCard());
 
-        Button add = pill("New habit", true);
+        Button add = actionButton("Create habit", true);
         add.setOnClickListener(v -> showAddDialog());
-        root.addView(add);
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(52)
+        );
+        addParams.setMargins(0, dp(16), 0, dp(8));
+        root.addView(add, addParams);
 
         ScrollView scroll = new ScrollView(this);
         list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(list);
-        root.addView(scroll, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1
-        ));
+        root.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         setContentView(root);
         refreshHabits();
+    }
+
+    private View summaryCard() {
+        LinearLayout card = card();
+        List<Habit> habits = store.getHabits();
+        int completed = 0;
+        int totalScore = 0;
+        for (Habit habit : habits) {
+            if (habit.completed) {
+                completed++;
+            }
+            totalScore += Math.min(100, Math.round((habit.progress * 100f) / Math.max(1, habit.target)));
+        }
+
+        card.addView(text("Daily score", 15, false, MUTED));
+        card.addView(text(habits.isEmpty() ? "0" : String.valueOf(totalScore / Math.max(1, habits.size())), 42, true, TEXT));
+        card.addView(text(completed + " completed - " + habits.size() + " active habits", 14, false, MUTED));
+        return card;
     }
 
     private void refreshHabits() {
@@ -116,82 +145,125 @@ public class MainActivity extends Activity implements SensorEventListener {
         list.removeAllViews();
         List<Habit> habits = store.getHabits();
         if (habits.isEmpty()) {
-            TextView empty = text("No habits yet. Start with a walk, water, reading, or anything you want to repeat.", 17, false);
-            empty.setPadding(0, 36, 0, 0);
+            LinearLayout empty = card();
+            empty.addView(text("No habits yet", 20, true, TEXT));
+            TextView copy = text("Create a walk, hydration, checklist, or focus habit and track it manually or with phone sensors.", 14, false, MUTED);
+            copy.setPadding(0, dp(8), 0, 0);
+            empty.addView(copy);
             list.addView(empty);
             return;
         }
         for (Habit habit : habits) {
-            list.addView(habitRow(habit));
+            list.addView(habitCard(habit));
         }
         HabitWidgetProvider.updateAll(this);
     }
 
-    private View habitRow(Habit habit) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 24, 0, 24);
+    private View habitCard(Habit habit) {
+        LinearLayout card = card();
 
-        TextView name = text(habit.title, 22, true);
-        row.addView(name);
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setOrientation(LinearLayout.HORIZONTAL);
 
-        String automaticLabel = habit.automatic ? "auto step tracking" : "manual";
-        TextView meta = text(habit.progress + " / " + habit.target + " " + habit.unit + " every " + habit.intervalHours + "h · " + automaticLabel, 15, false);
-        row.addView(meta);
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.addView(text(habit.title, 21, true, TEXT));
+        String automaticLabel = habit.automatic ? "Auto step tracking" : "Manual tracking";
+        copy.addView(text(automaticLabel + " - every " + habit.intervalHours + " hours", 13, false, MUTED));
+        top.addView(copy, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(statusPill(habit.completed ? "Done" : "Open", habit.completed));
+        card.addView(top);
+
+        int percent = Math.min(100, Math.round((habit.progress * 100f) / Math.max(1, habit.target)));
+        TextView progress = text(habit.progress + " / " + habit.target + " " + habit.unit, 28, true, TEXT);
+        progress.setPadding(0, dp(14), 0, dp(6));
+        card.addView(progress);
+
+        ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setMax(100);
+        bar.setProgress(percent);
+        card.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)));
+
+        LinearLayout metrics = new LinearLayout(this);
+        metrics.setOrientation(LinearLayout.HORIZONTAL);
+        metrics.setPadding(0, dp(14), 0, dp(4));
+        metrics.addView(metric("Target", habit.target + " " + habit.unit), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        metrics.addView(metric("Streak", habit.completed ? "1 day" : "0 days"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        metrics.addView(metric("Score", percent + " pts"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        card.addView(metrics);
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         actions.setGravity(Gravity.CENTER_VERTICAL);
-        actions.setPadding(0, 14, 0, 0);
+        actions.setPadding(0, dp(10), 0, 0);
 
-        Button plus = pill("+1", false);
-        plus.setOnClickListener(v -> {
+        Button log = actionButton("Log progress", false);
+        log.setOnClickListener(v -> {
             store.addProgress(habit.id, 1);
             Habit updated = store.getHabit(habit.id);
             if (updated != null && updated.completed) {
                 notifyCompleted(updated);
             }
-            refreshHabits();
+            render();
         });
-        actions.addView(plus);
+        actions.addView(log, new LinearLayout.LayoutParams(0, dp(46), 1));
 
-        Button reset = pill("Reset", false);
+        Button reset = actionButton("Reset", false);
         reset.setOnClickListener(v -> {
             habit.progress = 0;
             habit.completed = false;
             habit.baselineSteps = 0;
             store.updateHabit(habit);
-            refreshHabits();
+            render();
         });
-        actions.addView(reset);
+        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(0, dp(46), 1);
+        resetParams.setMargins(dp(10), 0, 0, 0);
+        actions.addView(reset, resetParams);
 
         if (habit.automatic) {
-            Button track = pill(activeAutomaticHabit != null && activeAutomaticHabit.id.equals(habit.id) ? "Tracking" : "Track steps", true);
+            Button track = actionButton(activeAutomaticHabit != null && activeAutomaticHabit.id.equals(habit.id) ? "Tracking steps" : "Start step tracking", true);
             track.setOnClickListener(v -> startAutomaticHabit(habit));
-            actions.addView(track);
+            LinearLayout.LayoutParams trackParams = new LinearLayout.LayoutParams(0, dp(46), 1);
+            trackParams.setMargins(dp(10), 0, 0, 0);
+            actions.addView(track, trackParams);
         }
 
-        row.addView(actions);
-        View divider = new View(this);
-        divider.setBackgroundColor(Color.BLACK);
-        row.addView(divider, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        return row;
+        card.addView(actions);
+        return card;
+    }
+
+    private LinearLayout metric(String label, String value) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.addView(text(label, 12, false, MUTED));
+        box.addView(text(value, 14, true, TEXT));
+        return box;
+    }
+
+    private TextView statusPill(String value, boolean completed) {
+        TextView pill = text(value, 12, true, completed ? GREEN : BLUE);
+        pill.setGravity(Gravity.CENTER);
+        pill.setPadding(dp(12), dp(7), dp(12), dp(7));
+        pill.setBackground(rounded(completed ? SOFT_GREEN : SOFT_BLUE, dp(18)));
+        return pill;
     }
 
     private void showAddDialog() {
         LinearLayout form = new LinearLayout(this);
         form.setOrientation(LinearLayout.VERTICAL);
-        form.setPadding(16, 8, 16, 0);
+        form.setPadding(dp(16), dp(8), dp(16), 0);
 
         EditText title = field("Habit name");
         EditText target = field("Target amount, e.g. 1000");
         target.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         EditText unit = field("Unit, e.g. steps");
-        EditText interval = field("Interval hours, e.g. 2");
+        EditText interval = field("Frequency in hours, e.g. 2");
         interval.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         CheckBox automatic = new CheckBox(this);
-        automatic.setText("Track automatically with step sensor");
-        automatic.setTextColor(Color.BLACK);
+        automatic.setText("Track walking automatically with step sensor");
+        automatic.setTextColor(TEXT);
+        setFont(automatic, false);
 
         form.addView(title);
         form.addView(target);
@@ -200,7 +272,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         form.addView(automatic);
 
         new AlertDialog.Builder(this)
-                .setTitle("New habit")
+                .setTitle("Create habit")
                 .setView(form)
                 .setPositiveButton("Create", (dialog, which) -> {
                     String habitTitle = title.getText().toString().trim();
@@ -214,7 +286,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                         habitUnit = automatic.isChecked() ? "steps" : "count";
                     }
                     store.createHabit(habitTitle, habitUnit, habitTarget, habitInterval, automatic.isChecked());
-                    refreshHabits();
+                    render();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -234,7 +306,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         activeAutomaticHabit = habit;
         startStepSensor();
         Toast.makeText(this, "Step tracking started. Keep the phone with you.", Toast.LENGTH_SHORT).show();
-        refreshHabits();
+        render();
     }
 
     private void startStepSensor() {
@@ -265,7 +337,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             notifyCompleted(habit);
             sensorManager.unregisterListener(this);
         }
-        refreshHabits();
+        render();
     }
 
     @Override
@@ -320,6 +392,66 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
+    private LinearLayout card() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(18), dp(18), dp(18), dp(18));
+        card.setBackground(rounded(CARD, dp(26)));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(14), 0, 0);
+        card.setLayoutParams(params);
+        return card;
+    }
+
+    private Button actionButton(String value, boolean filled) {
+        Button button = new Button(this);
+        button.setText(value);
+        button.setAllCaps(false);
+        button.setTextSize(13);
+        button.setTextColor(filled ? Color.WHITE : BLUE);
+        button.setBackground(rounded(filled ? BLUE : SOFT_BLUE, dp(22)));
+        setFont(button, true);
+        return button;
+    }
+
+    private EditText field(String hint) {
+        EditText field = new EditText(this);
+        field.setHint(hint);
+        field.setSingleLine(true);
+        field.setTextColor(TEXT);
+        field.setHintTextColor(MUTED);
+        setFont(field, false);
+        return field;
+    }
+
+    private TextView text(String value, int sp, boolean bold, int color) {
+        TextView view = new TextView(this);
+        view.setText(value);
+        view.setTextColor(color);
+        view.setTextSize(sp);
+        view.setLetterSpacing(0);
+        setFont(view, bold);
+        return view;
+    }
+
+    private void setFont(TextView view, boolean bold) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            view.setTypeface(getResources().getFont(bold ? R.font.poppins_semibold : R.font.poppins_regular));
+        } else if (bold) {
+            view.setTypeface(Typeface.DEFAULT_BOLD);
+        }
+    }
+
+    private GradientDrawable rounded(int color, int radius) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(radius);
+        return drawable;
+    }
+
     private int parsePositive(String raw, int fallback) {
         try {
             return Math.max(1, Integer.parseInt(raw.trim()));
@@ -328,39 +460,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
-    private EditText field(String hint) {
-        EditText field = new EditText(this);
-        field.setHint(hint);
-        field.setSingleLine(true);
-        field.setTextColor(Color.BLACK);
-        field.setHintTextColor(Color.DKGRAY);
-        return field;
-    }
-
-    private TextView text(String value, int sp, boolean bold) {
-        TextView view = new TextView(this);
-        view.setText(value);
-        view.setTextColor(Color.BLACK);
-        view.setTextSize(sp);
-        view.setLetterSpacing(0);
-        if (bold) {
-            view.setTypeface(Typeface.DEFAULT_BOLD);
-        }
-        return view;
-    }
-
-    private Button pill(String value, boolean filled) {
-        Button button = new Button(this);
-        button.setText(value);
-        button.setAllCaps(false);
-        button.setTextColor(filled ? Color.WHITE : Color.BLACK);
-        button.setBackgroundResource(filled ? R.drawable.button_black : R.drawable.button_white);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                44
-        );
-        params.setMargins(0, 0, 12, 0);
-        button.setLayoutParams(params);
-        return button;
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

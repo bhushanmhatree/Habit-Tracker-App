@@ -25,3 +25,25 @@ Create the first publishable foundation for a lightweight Android habit tracker 
 - Health Connect and Strava are scaffolded as integration entry points. Full sync requires app-specific credentials, user consent wording, privacy policy URLs, and Play Console Data Safety declarations.
 - Habit intervals are saved in v0.1.0, but recurring background reminders are planned for v0.2.0.
 - The project intentionally avoids large UI libraries to keep the app size small.
+
+## v0.1.1 - Design Preview And Samsung Health Direction
+
+Date: 2026-06-26
+
+### Purpose
+
+Improve the first version from a basic scaffold into a clearer health-tracking product direction that can be reviewed before building APKs.
+
+### Added
+
+- Browser-openable `design-preview.html` for reviewing the UI direction in Cursor before APK generation.
+- Poppins fonts bundled locally in the Android app.
+- Samsung Health and Samsung One UI-inspired visual system with light background, rounded cards, soft blue accents, and clearer hierarchy.
+- Named action buttons such as `Create habit`, `Log progress`, `Reset`, and `Start step tracking`.
+- Widget display modes for target, checklist, streak, score, and frequency.
+- Widget provider options for compact 2x1, standard 2x2, and wide 4x1 layouts.
+
+### Notes
+
+- The HTML preview is not the production app. It is a fast design-review surface so visual decisions can be checked before generating APK files.
+- Widgets use Android `RemoteViews`, so their layout is simpler than the main app by platform design.

@@ -48,5 +48,29 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/habit_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".HabitCompactWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.habittracker.widget.ADD_PROGRESS" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_compact_info" />
+        </receiver>
+
+        <receiver
+            android:name=".HabitWideWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.habittracker.widget.ADD_PROGRESS" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_wide_info" />
+        </receiver>
     </application>
 </manifest>

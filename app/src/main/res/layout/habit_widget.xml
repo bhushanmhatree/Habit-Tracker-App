@@ -5,7 +5,7 @@
     android:background="@drawable/widget_background"
     android:gravity="center_vertical"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/widget_title"
@@ -14,25 +14,41 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="Habit"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
+        android:textColor="#17191F"
+        android:fontFamily="@font/poppins_semibold"
+        android:textSize="15sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_metric"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="Target"
+        android:textColor="#6A717D"
+        android:fontFamily="@font/poppins_regular"
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/widget_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:text="0 / 0"
-        android:textColor="@android:color/black"
-        android:textSize="14sp" />
+        android:textColor="#17191F"
+        android:fontFamily="@font/poppins_bold"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/widget_add"
-        android:layout_width="96dp"
+        android:layout_width="116dp"
         android:layout_height="40dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:background="@drawable/button_black"
-        android:text="+1"
+        android:fontFamily="@font/poppins_semibold"
+        android:text="Log +1"
+        android:textAllCaps="false"
         android:textColor="@android:color/white" />
 </LinearLayout>
