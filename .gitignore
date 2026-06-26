@@ -4,6 +4,7 @@ local.properties
 *.iml
 .idea/
 captures/
+dist/
 *.apk
 *.aab
 *.jks
