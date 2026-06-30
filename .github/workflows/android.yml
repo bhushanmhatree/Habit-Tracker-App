@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Android Artifacts
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  apk:
+  android:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,8 +35,42 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug
 
-      - name: Upload APK
+      - name: Build release APK and AAB
+        run: gradle assembleRelease bundleRelease
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Habit-Tracker-v0.1.0-debug-apk
+          name: Habit-Tracker-v0.2.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload unsigned release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Habit-Tracker-v0.2.0-release-unsigned
+          path: |
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/bundle/release/app-release.aab
+
+      - name: Decode release keystore
+        if: ${{ secrets.HABIT_RELEASE_KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "${{ secrets.HABIT_RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/habit-release.jks"
+
+      - name: Build signed internal testing artifacts
+        if: ${{ secrets.HABIT_RELEASE_KEYSTORE_BASE64 != '' }}
+        env:
+          HABIT_RELEASE_STORE_FILE: ${{ runner.temp }}/habit-release.jks
+          HABIT_RELEASE_STORE_PASSWORD: ${{ secrets.HABIT_RELEASE_STORE_PASSWORD }}
+          HABIT_RELEASE_KEY_ALIAS: ${{ secrets.HABIT_RELEASE_KEY_ALIAS }}
+          HABIT_RELEASE_KEY_PASSWORD: ${{ secrets.HABIT_RELEASE_KEY_PASSWORD }}
+        run: gradle clean assembleRelease bundleRelease
+
+      - name: Upload signed internal testing artifacts
+        if: ${{ secrets.HABIT_RELEASE_KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Habit-Tracker-v0.2.0-signed-internal
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab

@@ -27,7 +27,7 @@ public class HabitWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         for (int id : ids) {
-            updateWidget(context, manager, id);
+            updateWidget(context, manager, id, layoutRes());
         }
     }
 
@@ -41,25 +41,29 @@ public class HabitWidgetProvider extends AppWidgetProvider {
 
     static void updateAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        updateComponent(context, manager, HabitWidgetProvider.class);
-        updateComponent(context, manager, HabitCompactWidgetProvider.class);
-        updateComponent(context, manager, HabitWideWidgetProvider.class);
+        updateComponent(context, manager, HabitWidgetProvider.class, R.layout.habit_widget);
+        updateComponent(context, manager, HabitCompactWidgetProvider.class, R.layout.habit_widget_compact);
+        updateComponent(context, manager, HabitWideWidgetProvider.class, R.layout.habit_widget_wide);
     }
 
-    private static void updateComponent(Context context, AppWidgetManager manager, Class<?> provider) {
+    private static void updateComponent(Context context, AppWidgetManager manager, Class<?> provider, int layoutRes) {
         ComponentName component = new ComponentName(context, provider);
         for (int id : manager.getAppWidgetIds(component)) {
-            updateWidget(context, manager, id);
+            updateWidget(context, manager, id, layoutRes);
         }
     }
 
     static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
+        updateWidget(context, manager, widgetId, R.layout.habit_widget);
+    }
+
+    static void updateWidget(Context context, AppWidgetManager manager, int widgetId, int layoutRes) {
         HabitStore store = new HabitStore(context);
         String habitId = store.getWidgetHabit(widgetId);
         String mode = store.getWidgetMode(widgetId);
         Habit habit = habitId == null ? null : store.getHabit(habitId);
 
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.habit_widget);
+        RemoteViews views = new RemoteViews(context.getPackageName(), layoutRes);
         if (habit == null) {
             views.setTextViewText(R.id.widget_title, "Choose habit");
             views.setTextViewText(R.id.widget_metric, "Widget setup");
@@ -82,6 +86,10 @@ public class HabitWidgetProvider extends AppWidgetProvider {
             views.setOnClickPendingIntent(R.id.widget_add, addPendingIntent);
         }
         manager.updateAppWidget(widgetId, views);
+    }
+
+    protected int layoutRes() {
+        return R.layout.habit_widget;
     }
 
     private static PendingIntent openAppIntent(Context context) {
@@ -116,7 +124,7 @@ public class HabitWidgetProvider extends AppWidgetProvider {
             return habit.completed ? "Completed" : "Open";
         }
         if ("streak".equals(mode)) {
-            return habit.completed ? "1 day" : "0 days";
+            return habit.streak + " days";
         }
         if ("score".equals(mode)) {
             return percent + " pts";

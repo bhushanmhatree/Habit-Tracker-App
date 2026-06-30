@@ -108,7 +108,7 @@ public class HabitWidgetConfigureActivity extends Activity {
         HabitStore store = new HabitStore(this);
         store.saveWidgetHabit(appWidgetId, selectedHabitId);
         store.saveWidgetMode(appWidgetId, selectedMode);
-        HabitWidgetProvider.updateWidget(this, AppWidgetManager.getInstance(this), appWidgetId);
+        HabitWidgetProvider.updateAll(this);
 
         Intent result = new Intent();
         result.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);

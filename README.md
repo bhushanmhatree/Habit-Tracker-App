@@ -6,15 +6,19 @@ Habit Tracker is a minimal black-and-white Android app for manual and sensor-ass
 
 Help people track recurring habits with either manual entries or automatic progress from phone sensors. Example: create a walking habit for 1,000 steps every 2 hours, keep the phone with you, and receive a notification when the target is completed.
 
-## Features in v0.1.0
+## Features in v0.2.0
 
 - Manual habit creation and progress entry.
+- Habit editing and deletion.
 - Automatic walking progress using Android's step counter sensor.
+- Real streak tracking from completion history.
+- Reminder timer notifications per habit.
 - Completion notification when a tracked habit reaches its target.
-- Home-screen widgets with selectable habit, quick manual increment, and multiple display options.
+- Home-screen widgets with 2x1, 2x2, and 4x1 layouts.
+- Widget display options for checklist, streak, target, score, and frequency.
 - Local-first storage with no account required.
 - Samsung Health-inspired interface with Poppins typography, soft cards, and clear action labels.
-- Integration screen prepared for Google Health Connect and Strava setup.
+- Health Connect permissions, rationale, onboarding, availability check, and settings entry point.
 - Google Play readiness checklist included.
 
 ## Design Preview
@@ -48,6 +52,19 @@ On Windows without the Gradle wrapper installed:
 ```powershell
 gradle assembleDebug
 ```
+
+GitHub Actions also builds downloadable artifacts on every push:
+
+- Debug APK for direct phone testing.
+- Unsigned release APK/AAB.
+- Signed internal testing APK/AAB when release keystore secrets are configured.
+
+Required GitHub secrets for signed internal builds:
+
+- `HABIT_RELEASE_KEYSTORE_BASE64`
+- `HABIT_RELEASE_STORE_PASSWORD`
+- `HABIT_RELEASE_KEY_ALIAS`
+- `HABIT_RELEASE_KEY_PASSWORD`
 
 ## Publishing Notes
 

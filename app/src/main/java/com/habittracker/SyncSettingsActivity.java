@@ -14,6 +14,8 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.health.connect.client.HealthConnectClient;
+
 public class SyncSettingsActivity extends Activity {
     private static final int BG = Color.rgb(246, 247, 250);
     private static final int TEXT = Color.rgb(23, 25, 31);
@@ -34,7 +36,8 @@ public class SyncSettingsActivity extends Activity {
         subtitle.setPadding(0, dp(6), 0, dp(18));
         root.addView(subtitle);
 
-        root.addView(syncCard("Google Health Connect", "Prepare health permission review and open Health Connect settings.", "Open Health Connect", v -> openHealthConnect()));
+        root.addView(syncCard("Google Health Connect", healthConnectStatus(), "Open Health Connect", v -> openHealthConnect()));
+        root.addView(syncCard("Health Connect rationale", "Review the exact data purpose shown during permission review.", "View rationale", v -> startActivity(new Intent(this, HealthConnectRationaleActivity.class))));
         root.addView(syncCard("Strava", "Create a Strava API app, then connect OAuth and activity sync.", "Open Strava API", v -> openUrl("https://www.strava.com/settings/api")));
 
         setContentView(root);
@@ -69,10 +72,24 @@ public class SyncSettingsActivity extends Activity {
         return card;
     }
 
+    private String healthConnectStatus() {
+        int status = HealthConnectClient.getSdkStatus(this, HealthConnectClient.DEFAULT_PROVIDER_PACKAGE_NAME);
+        if (status == HealthConnectClient.SDK_AVAILABLE) {
+            return "Health Connect is available. Review permissions and connect steps from Android settings.";
+        }
+        if (status == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
+            return "Health Connect needs to be installed or updated before step sync can be enabled.";
+        }
+        return "Health Connect is not available on this device.";
+    }
+
     private void openHealthConnect() {
         Intent intent = getPackageManager().getLaunchIntentForPackage("com.google.android.apps.healthdata");
         if (intent == null) {
-            intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+            intent = new Intent("android.health.connect.action.HEALTH_CONNECT_SETTINGS");
+            if (intent.resolveActivity(getPackageManager()) == null) {
+                intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+            }
         }
         startActivity(intent);
     }

@@ -57,7 +57,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepCounter = sensorManager == null ? null : sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         createNotificationChannel();
+        HabitReminderReceiver.ensureChannel(this);
         requestNotificationPermission();
+        store.recalculateAllStreaks();
+        HabitReminderScheduler.scheduleAll(this);
         render();
     }
 
@@ -189,9 +192,18 @@ public class MainActivity extends Activity implements SensorEventListener {
         metrics.setOrientation(LinearLayout.HORIZONTAL);
         metrics.setPadding(0, dp(14), 0, dp(4));
         metrics.addView(metric("Target", habit.target + " " + habit.unit), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        metrics.addView(metric("Streak", habit.completed ? "1 day" : "0 days"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        metrics.addView(metric("Streak", habit.streak + " days"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         metrics.addView(metric("Score", percent + " pts"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         card.addView(metrics);
+
+        TextView history = text("Best streak " + habit.bestStreak + " days - " + historyLabel(habit), 13, false, MUTED);
+        history.setPadding(0, dp(2), 0, dp(6));
+        card.addView(history);
+        if (habit.reminderMinutes > 0) {
+            TextView reminder = text("Reminder every " + reminderLabel(habit.reminderMinutes), 13, false, BLUE);
+            reminder.setPadding(0, 0, 0, dp(6));
+            card.addView(reminder);
+        }
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -204,6 +216,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             Habit updated = store.getHabit(habit.id);
             if (updated != null && updated.completed) {
                 notifyCompleted(updated);
+                HabitReminderScheduler.schedule(this, updated);
             }
             render();
         });
@@ -215,6 +228,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             habit.completed = false;
             habit.baselineSteps = 0;
             store.updateHabit(habit);
+            HabitReminderScheduler.schedule(this, habit);
             render();
         });
         LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(0, dp(46), 1);
@@ -230,6 +244,23 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         card.addView(actions);
+
+        LinearLayout manage = new LinearLayout(this);
+        manage.setOrientation(LinearLayout.HORIZONTAL);
+        manage.setGravity(Gravity.CENTER_VERTICAL);
+        manage.setPadding(0, dp(10), 0, 0);
+
+        Button edit = actionButton("Edit habit", false);
+        edit.setOnClickListener(v -> showHabitDialog(habit));
+        manage.addView(edit, new LinearLayout.LayoutParams(0, dp(44), 1));
+
+        Button delete = actionButton("Delete habit", false);
+        delete.setTextColor(Color.rgb(210, 58, 58));
+        delete.setOnClickListener(v -> confirmDelete(habit));
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(0, dp(44), 1);
+        deleteParams.setMargins(dp(10), 0, 0, 0);
+        manage.addView(delete, deleteParams);
+        card.addView(manage);
         return card;
     }
 
@@ -250,6 +281,10 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     private void showAddDialog() {
+        showHabitDialog(null);
+    }
+
+    private void showHabitDialog(Habit existing) {
         LinearLayout form = new LinearLayout(this);
         form.setOrientation(LinearLayout.VERTICAL);
         form.setPadding(dp(16), dp(8), dp(16), 0);
@@ -260,32 +295,65 @@ public class MainActivity extends Activity implements SensorEventListener {
         EditText unit = field("Unit, e.g. steps");
         EditText interval = field("Frequency in hours, e.g. 2");
         interval.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        EditText reminder = field("Reminder timer in minutes, e.g. 120");
+        reminder.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         CheckBox automatic = new CheckBox(this);
         automatic.setText("Track walking automatically with step sensor");
         automatic.setTextColor(TEXT);
         setFont(automatic, false);
 
+        if (existing != null) {
+            title.setText(existing.title);
+            target.setText(String.valueOf(existing.target));
+            unit.setText(existing.unit);
+            interval.setText(String.valueOf(existing.intervalHours));
+            reminder.setText(existing.reminderMinutes > 0 ? String.valueOf(existing.reminderMinutes) : "");
+            automatic.setChecked(existing.automatic);
+        }
+
         form.addView(title);
         form.addView(target);
         form.addView(unit);
         form.addView(interval);
+        form.addView(reminder);
         form.addView(automatic);
 
         new AlertDialog.Builder(this)
-                .setTitle("Create habit")
+                .setTitle(existing == null ? "Create habit" : "Edit habit")
                 .setView(form)
-                .setPositiveButton("Create", (dialog, which) -> {
+                .setPositiveButton(existing == null ? "Create" : "Save", (dialog, which) -> {
                     String habitTitle = title.getText().toString().trim();
                     String habitUnit = unit.getText().toString().trim();
                     int habitTarget = parsePositive(target.getText().toString(), 1);
                     int habitInterval = parsePositive(interval.getText().toString(), 24);
+                    int reminderMinutes = parseNonNegative(reminder.getText().toString(), 0);
                     if (habitTitle.isEmpty()) {
                         habitTitle = "Untitled habit";
                     }
                     if (habitUnit.isEmpty()) {
                         habitUnit = automatic.isChecked() ? "steps" : "count";
                     }
-                    store.createHabit(habitTitle, habitUnit, habitTarget, habitInterval, automatic.isChecked());
+                    if (existing == null) {
+                        store.createHabit(habitTitle, habitUnit, habitTarget, habitInterval, automatic.isChecked(), reminderMinutes);
+                    } else {
+                        store.updateHabitDetails(existing.id, habitTitle, habitUnit, habitTarget, habitInterval, automatic.isChecked(), reminderMinutes);
+                    }
+                    Habit saved = existing == null ? store.getHabits().get(0) : store.getHabit(existing.id);
+                    HabitReminderScheduler.schedule(this, saved);
+                    render();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmDelete(Habit habit) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete habit?")
+                .setMessage("This removes " + habit.title + " and its streak history from this phone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    HabitReminderScheduler.cancel(this, habit.id);
+                    store.deleteHabit(habit.id);
+                    HabitWidgetProvider.updateAll(this);
                     render();
                 })
                 .setNegativeButton("Cancel", null)
@@ -334,8 +402,11 @@ public class MainActivity extends Activity implements SensorEventListener {
         store.updateHabit(habit);
         activeAutomaticHabit = habit;
         if (!wasCompleted && habit.completed) {
+            store.markCompleted(habit);
+            store.updateHabit(habit);
             notifyCompleted(habit);
             sensorManager.unregisterListener(this);
+            HabitReminderScheduler.schedule(this, habit);
         }
         render();
     }
@@ -458,6 +529,29 @@ public class MainActivity extends Activity implements SensorEventListener {
         } catch (Exception ignored) {
             return fallback;
         }
+    }
+
+    private int parseNonNegative(String raw, int fallback) {
+        try {
+            return Math.max(0, Integer.parseInt(raw.trim()));
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private String historyLabel(Habit habit) {
+        if (habit.lastCompletedDate == null || habit.lastCompletedDate.length() == 0) {
+            return "no completions yet";
+        }
+        return "last completed " + habit.lastCompletedDate;
+    }
+
+    private String reminderLabel(int minutes) {
+        if (minutes % 60 == 0) {
+            int hours = minutes / 60;
+            return hours + (hours == 1 ? " hour" : " hours");
+        }
+        return minutes + " minutes";
     }
 
     private int dp(int value) {

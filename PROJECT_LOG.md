@@ -47,3 +47,28 @@ Improve the first version from a basic scaffold into a clearer health-tracking p
 
 - The HTML preview is not the production app. It is a fast design-review surface so visual decisions can be checked before generating APK files.
 - Widgets use Android `RemoteViews`, so their layout is simpler than the main app by platform design.
+
+## v0.2.0 - Editable Habits, Streaks, Reminders, Widgets, And Health Connect
+
+Date: 2026-06-30
+
+### Purpose
+
+Turn the tracker into a more complete daily-use version with editable habits, persistent streak history, reminder timers, richer widgets, Health Connect readiness, and internal testing build artifacts.
+
+### Added
+
+- Edit and delete actions for each habit.
+- Real streak history stored as completion dates.
+- Current streak and best streak calculations.
+- Reminder timers per habit using Android alarms and notification channels.
+- Reminder restoration after reboot or app update.
+- Separate widget layouts for 2x1 compact, 2x2 standard, and 4x1 wide widgets.
+- Widget modes for checklist, streak, target, score, and frequency.
+- Health Connect dependency, step permissions, availability checks, rationale screen, and onboarding screen.
+- CI build outputs for debug APK, unsigned release APK/AAB, and signed internal APK/AAB when keystore secrets are present.
+
+### Notes
+
+- Health Connect is permission-ready and availability-aware in v0.2.0. Full background read/write step synchronization should be tested on physical devices before Play submission.
+- Signed internal artifacts require private keystore secrets in GitHub Actions. The keystore itself must never be committed.
