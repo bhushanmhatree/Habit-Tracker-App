@@ -14,8 +14,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.health.connect.client.HealthConnectClient;
-
 public class SyncSettingsActivity extends Activity {
     private static final String HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata";
     private static final int BG = Color.rgb(246, 247, 250);
@@ -74,11 +72,10 @@ public class SyncSettingsActivity extends Activity {
     }
 
     private String healthConnectStatus() {
-        int status = HealthConnectClient.getSdkStatus(this, HEALTH_CONNECT_PACKAGE);
-        if (status == HealthConnectClient.SDK_AVAILABLE) {
+        if (Build.VERSION.SDK_INT >= 34) {
             return "Health Connect is available. Review permissions and connect steps from Android settings.";
         }
-        if (status == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
+        if (getPackageManager().getLaunchIntentForPackage(HEALTH_CONNECT_PACKAGE) != null) {
             return "Health Connect needs to be installed or updated before step sync can be enabled.";
         }
         return "Health Connect is not available on this device.";
@@ -87,7 +84,9 @@ public class SyncSettingsActivity extends Activity {
     private void openHealthConnect() {
         Intent intent = getPackageManager().getLaunchIntentForPackage(HEALTH_CONNECT_PACKAGE);
         if (intent == null) {
-            intent = new Intent(HealthConnectClient.getHealthConnectSettingsAction());
+            intent = new Intent(Build.VERSION.SDK_INT >= 34
+                    ? "android.health.connect.action.HEALTH_HOME_SETTINGS"
+                    : "androidx.health.ACTION_HEALTH_CONNECT_SETTINGS");
             if (intent.resolveActivity(getPackageManager()) == null) {
                 intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
             }
