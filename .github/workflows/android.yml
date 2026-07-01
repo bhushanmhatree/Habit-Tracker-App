@@ -36,6 +36,7 @@ jobs:
 
       - name: Build debug APK
         run: |
+          set -o pipefail
           gradle assembleDebug 2>&1 | tee debug-build.log
 
       - name: Upload debug build log
