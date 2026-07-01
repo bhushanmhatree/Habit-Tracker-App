@@ -35,12 +35,8 @@ jobs:
           gradle-version: "8.11.1"
 
       - name: Build debug APK
-        id: debug_build
-        continue-on-error: true
         run: |
-          set +e
           gradle assembleDebug 2>&1 | tee debug-build.log
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Upload debug build log
         if: always()
@@ -48,10 +44,6 @@ jobs:
         with:
           name: Habit-Tracker-v0.2.0-debug-build-log
           path: debug-build.log
-
-      - name: Fail if debug build failed
-        if: steps.debug_build.outputs.exit_code != '0'
-        run: exit 1
 
       - name: Build release APK and AAB
         run: gradle assembleRelease bundleRelease
